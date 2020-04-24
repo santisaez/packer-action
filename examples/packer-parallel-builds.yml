@@ -1,0 +1,57 @@
+# This is an example config of the `packer-action` GitHub action that:
+#
+# - Creates a workflow that runs 2 builds in parallel (DigitalOcean + Google Cloud)
+# - Passes to Packer a bunch of env vars from a `CONFIG` file
+# - Sets a SemVer version when committing to master or the commit SHA-1 otherwise
+
+name: Packer
+on:
+  - push
+
+jobs:
+  digitalocean:
+    name: DigitalOcean
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2
+
+      - name: Set ENV variables
+        run: for v in `cat CONFIG` ; do echo "::set-env name=${v%%=*}::${v##*=}" ; done
+
+      - name: Override VERSION variable
+        if: github.ref != 'refs/heads/master'
+        run: echo "::set-env name=VERSION::$(git rev-parse --short HEAD)"
+
+      - name: Build VM image with Packer
+        uses: santisaez/packer-action@v1
+        with:
+          only: digitalocean
+          template: hashistack.json
+        env:
+          DIGITALOCEAN_API_TOKEN: ${{ secrets.DIGITALOCEAN_API_TOKEN }}
+
+  googlecompute:
+    name: Google Compute
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2
+
+      - name: Set ENV variables
+        run: for v in `cat CONFIG` ; do echo "::set-env name=${v%%=*}::${v##*=}" ; done
+
+      - name: Override VERSION variable
+        if: github.ref != 'refs/heads/master'
+        run: echo "::set-env name=VERSION::$(git rev-parse --short HEAD)"
+
+      - name: Build VM image with Packer
+        uses: santisaez/packer-action@v1
+        with:
+          only: googlecompute
+          secret: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          template: hashistack.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: '/tmp/packer-secret'

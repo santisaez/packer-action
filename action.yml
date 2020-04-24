@@ -1,0 +1,26 @@
+name: 'Build images with Packer'
+author: 'Santi Saez <xanti.saez@gmail.com>'
+description: 'Build virtual-machine images using Packer'
+
+inputs:
+  only:
+    description: 'Run only the specified Virtual-Machine builders'
+    required: false
+  options:
+    description: 'Optional command arguments to be provided when calling Packer'
+    required: false
+  secret:
+    description: 'The secret will be written to /tmp/packer-secret, see Providing Secrets'
+    required: false
+  template:
+    description: 'Source file that defines how machine images are built'
+    required: true
+    default: 'default.json'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+branding:
+  icon: 'archive'
+  color: 'blue'
